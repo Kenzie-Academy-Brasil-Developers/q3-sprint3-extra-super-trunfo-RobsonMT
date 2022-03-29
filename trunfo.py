@@ -1,16 +1,12 @@
 import itertools
+import json
 from os import getenv
 from random import choices, sample
 from dotenv import load_dotenv
-from json_handler import read_json, write_json
 
-
-# Não delete a linha abaixo, carregamento de variáveis de ambiente
 load_dotenv()
 
-
 class Trunfo:
-    # Desenvolva sua classe abaixo
     FILENAME = getenv("FILENAME")
     SCORE = {"player_1": 0, "player_2": 0, "draw": 0}
     ATTRIBUTES = ["intelligence", "power", "strenght", "agility", "vitality"]
@@ -32,16 +28,22 @@ class Trunfo:
         self.vitality = vitality
 
     def register_card(self):
-        write_json(self.FILENAME, self.__dict__)
+         with open(self.FILENAME, "r") as in_file:
+            json_list = json.load(in_file)
+            json_list.append(self.__dict__)
+
+            with open(self.FILENAME, "w") as out_file:
+                json.dump(json_list, out_file, indent=2)
 
     @classmethod
     def list_all_super_heroes(cls):
-        return read_json(cls.FILENAME)
+        with open(cls.FILENAME, "r") as json_file:
+            return json.load(json_file)
 
     @classmethod
     def get_players_decks(cls):
 
-        decks_of_cards = read_json(cls.FILENAME)
+        decks_of_cards = cls.list_all_super_heroes()
 
         if not len(decks_of_cards) % 2 == 0:
             return None
@@ -67,20 +69,19 @@ class Trunfo:
 
         attribute_random = choices(cls.ATTRIBUTES, k=1)[0]
 
-        p1_attributes_sum = 0
-        p2_attributes_sum = 0
+        p1_att_value = 0
+        p2_att_value = 0
 
-        for card in players_cards["player_1"]:
-            p1_attributes_sum += card[attribute_random]
+        for card in zip(players_cards["player_1"], players_cards["player_2"]):
+            p1_att_value = card[0][attribute_random]
+            p2_att_value = card[1][attribute_random]
 
-        for card in players_cards["player_2"]:
-            p2_attributes_sum += card[attribute_random]
-
-        if p1_attributes_sum > p2_attributes_sum:
-            cls.SCORE.update({"player_1": cls.SCORE["player_1"] + 1})
-        if p1_attributes_sum < p2_attributes_sum:
-            cls.SCORE.update({"player_2": cls.SCORE["player_2"] + 1})
-        if p1_attributes_sum == p2_attributes_sum:
-            cls.SCORE.update({"draw": cls.SCORE["draw"] + 1})
+            if p1_att_value > p2_att_value:
+                cls.SCORE.update({"player_1": cls.SCORE["player_1"] + 1})
+            if p1_att_value < p2_att_value:
+                cls.SCORE.update({"player_2": cls.SCORE["player_2"] + 1})
+            if p1_att_value == p2_att_value:
+                cls.SCORE.update({"draw": cls.SCORE["draw"] + 1})
 
         return cls.SCORE
+
